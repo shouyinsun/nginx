@@ -121,11 +121,15 @@ typedef enum {
 #define NGX_HTTP_V2_BUFFERED   0x02
 
 
+//网络连接
 struct ngx_connection_s {
     void               *data;
+    //读事件
     ngx_event_t        *read;
+    //写事件
     ngx_event_t        *write;
 
+    //套接字句柄
     ngx_socket_t        fd;
 
     ngx_recv_pt         recv;

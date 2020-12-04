@@ -13,12 +13,16 @@
 #include <ngx_core.h>
 
 
+//字符串
 typedef struct {
+    //长度
     size_t      len;
+    //指针地址
     u_char     *data;
 } ngx_str_t;
 
 
+//字符串kv
 typedef struct {
     ngx_str_t   key;
     ngx_str_t   value;

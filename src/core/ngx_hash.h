@@ -13,15 +13,21 @@
 #include <ngx_core.h>
 
 
+//hash表元素
 typedef struct {
+    //value
     void             *value;
+    //key长度
     u_short           len;
     u_char            name[1];
 } ngx_hash_elt_t;
 
 
+//hash的桶
 typedef struct {
+    //hash表的桶指针的指针
     ngx_hash_elt_t  **buckets;
+    //桶个数
     ngx_uint_t        size;
 } ngx_hash_t;
 
@@ -48,16 +54,21 @@ typedef struct {
     ngx_hash_wildcard_t  *wc_tail;
 } ngx_hash_combined_t;
 
-
+//hash表主体结果
 typedef struct {
+    //指向hash数组结构
     ngx_hash_t       *hash;
+    //key 散列方法
     ngx_hash_key_pt   key;
-
+    //最大数量
     ngx_uint_t        max_size;
+    //桶存储空间大小
     ngx_uint_t        bucket_size;
-
+    //hash表名
     char             *name;
+    //内存池
     ngx_pool_t       *pool;
+    //临时内存池
     ngx_pool_t       *temp_pool;
 } ngx_hash_init_t;
 

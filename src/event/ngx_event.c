@@ -54,6 +54,7 @@ ngx_uint_t            ngx_use_accept_mutex;
 ngx_uint_t            ngx_accept_events;
 ngx_uint_t            ngx_accept_mutex_held;
 ngx_msec_t            ngx_accept_mutex_delay;
+//不再处理accept事件
 ngx_int_t             ngx_accept_disabled;
 
 
@@ -188,8 +189,9 @@ ngx_module_t  ngx_event_core_module = {
     NULL,                                  /* exit master */
     NGX_MODULE_V1_PADDING
 };
-
-
+//惊群是指多个进程/线程在等待同一资源时,每当资源可用,所有的进程/线程都来竞争资源的现象
+//进程事件分发器
+//处理：事件分发,惊群处理,负载均衡
 void
 ngx_process_events_and_timers(ngx_cycle_t *cycle)
 {
@@ -214,12 +216,17 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
 
 #endif
     }
-
+    /*ngx_use_accept_mutex变量代表是否使用
+    accept互斥体
+	 * 默认是使用,可以通过accept_mutex off;指令关闭；
+	 * accept mutex 的作用就是避免惊群,同时实现负载均衡
+     * */
     if (ngx_use_accept_mutex) {
         if (ngx_accept_disabled > 0) {
             ngx_accept_disabled--;
 
         } else {
+            //获取锁失败
             if (ngx_trylock_accept_mutex(cycle) == NGX_ERROR) {
                 return;
             }
@@ -228,6 +235,13 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
                 flags |= NGX_POST_EVENTS;
 
             } else {
+                /**
+                 * 1. 获取锁失败,意味着既不能让当前worker进程频繁的试图抢锁,也不能让它经过太长事件再去抢锁
+                 * 2. 开启了timer_resolution时间精度,需要让ngx_process_change方法在没有新事件的时候至少等待ngx_accept_mutex_delay毫秒之后再去试图抢锁
+                 * 3. 没有开启时间精度时,如果最近一个定时器事件的超时时间距离现在超过了ngx_accept_mutex_delay毫秒,也要把timer设置为ngx_accept_mutex_delay毫秒
+                 * 4. 不能让ngx_process_change方法在没有新事件的时候等待的时间超过ngx_accept_mutex_delay,这会影响整个负载均衡机制
+                 * 5. 如果拿到锁的进程能很快处理完accpet,而没拿到锁的一直在等待,容易造成进程忙的很忙,空的很空
+                 */
                 if (timer == NGX_TIMER_INFINITE
                     || timer > ngx_accept_mutex_delay)
                 {
@@ -251,6 +265,10 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "timer delta: %M", delta);
 
+    /**
+	 *ngx_posted_accept_events是一个事件队列,暂存epoll从监听套接口wait到的accept事件
+	 *循环处理accpet事件列队上的accpet事件
+	 */
     ngx_event_process_posted(cycle, &ngx_posted_accept_events);
 
     if (ngx_accept_mutex_held) {
@@ -260,7 +278,10 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     if (delta) {
         ngx_event_expire_timers();
     }
-
+    /**
+	 *普通事件都会存放在ngx_posted_events队列上
+	 *循环处理read事件列队上的read事件
+	 */
     ngx_event_process_posted(cycle, &ngx_posted_events);
 }
 
@@ -464,7 +485,7 @@ ngx_event_init_conf(ngx_cycle_t *cycle, void *conf)
     return NGX_CONF_OK;
 }
 
-
+//event事件核心模块初始化函数
 static ngx_int_t
 ngx_event_module_init(ngx_cycle_t *cycle)
 {
@@ -1247,7 +1268,7 @@ ngx_event_core_create_conf(ngx_cycle_t *cycle)
     return ecf;
 }
 
-
+//初始化Event的核心配置文件
 static char *
 ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf)
 {

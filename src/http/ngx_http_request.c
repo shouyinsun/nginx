@@ -1049,7 +1049,7 @@ failed:
 
 #endif
 
-
+//处理请求行
 static void
 ngx_http_process_request_line(ngx_event_t *rev)
 {
@@ -1517,7 +1517,9 @@ ngx_http_process_request_headers(ngx_event_t *rev)
     ngx_http_run_posted_requests(c);
 }
 
-
+/**
+ * 读取请求头数据
+ */
 static ssize_t
 ngx_http_read_request_header(ngx_http_request_t *r)
 {
@@ -2002,7 +2004,7 @@ ngx_http_process_request_header(ngx_http_request_t *r)
     return NGX_OK;
 }
 
-
+//处理request信息
 void
 ngx_http_process_request(ngx_http_request_t *r)
 {
@@ -2086,11 +2088,11 @@ ngx_http_process_request(ngx_http_request_t *r)
     (void) ngx_atomic_fetch_add(ngx_stat_writing, 1);
     r->stat_writing = 1;
 #endif
-
+    /* read和write事件都设置为：ngx_http_request_handler,通过事件状态来判断*/
     c->read->handler = ngx_http_request_handler;
     c->write->handler = ngx_http_request_handler;
     r->read_event_handler = ngx_http_block_reading;
-
+    /* http处理分发核心函数 */
     ngx_http_handler(r);
 }
 
@@ -2877,7 +2879,11 @@ ngx_http_request_finalizer(ngx_http_request_t *r)
     ngx_http_finalize_request(r, 0);
 }
 
-
+/**
+ *ngx_http_commands 命令集的回调函数
+ *HTTP模块初始化的入口函数
+ *
+ */
 void
 ngx_http_block_reading(ngx_http_request_t *r)
 {

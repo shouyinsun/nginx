@@ -154,6 +154,7 @@ ngx_conf_add_dump(ngx_conf_t *cf, ngx_str_t *filename)
 }
 
 
+//解析配置信息核心函数
 char *
 ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
 {
@@ -213,7 +214,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
         cf->conf_file->file.offset = 0;
         cf->conf_file->file.log = cf->log;
         cf->conf_file->line = 1;
-
+        //解析文件
         type = parse_file;
 
         if (ngx_dump_config
@@ -231,25 +232,28 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
         }
 
     } else if (cf->conf_file->file.fd != NGX_INVALID_FILE) {
-
+        //解析块
         type = parse_block;
 
     } else {
+        //解析属性
         type = parse_param;
     }
 
 
     for ( ;; ) {
+        //将配置信息解析成 token
+        //仅仅是将配置文件的数据解析成一个个的单词，按行解析
         rc = ngx_conf_read_token(cf);
 
         /*
          * ngx_conf_read_token() may return
          *
-         *    NGX_ERROR             there is error
-         *    NGX_OK                the token terminated by ";" was found
-         *    NGX_CONF_BLOCK_START  the token terminated by "{" was found
-         *    NGX_CONF_BLOCK_DONE   the "}" was found
-         *    NGX_CONF_FILE_DONE    the configuration file is done
+         *    NGX_ERROR             there is error 解析失败
+         *    NGX_OK                the token terminated by ";" was found 结尾符; 解析成功
+         *    NGX_CONF_BLOCK_START  the token terminated by "{" was found {模块开始
+         *    NGX_CONF_BLOCK_DONE   the "}" was found }模块结束
+         *    NGX_CONF_FILE_DONE    the configuration file is done 文件结束
          */
 
         if (rc == NGX_ERROR) {
@@ -315,7 +319,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
             goto failed;
         }
 
-
+        //将配置文件设置到模块上
         rc = ngx_conf_handler(cf, rc);
 
         if (rc == NGX_ERROR) {
@@ -352,6 +356,7 @@ done:
 }
 
 
+//配置信息逐个解析到相应的模块上
 static ngx_int_t
 ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
 {
@@ -377,7 +382,8 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
             if (name->len != cmd->name.len) {
                 continue;
             }
-
+            //检查配置名称和token的第一个元素的名称是否一致
+            //如果不一致,则说明命令不一样
             if (ngx_strcmp(name->data, cmd->name.data) != 0) {
                 continue;
             }
@@ -498,7 +504,38 @@ invalid:
     return NGX_ERROR;
 }
 
-
+/**
+ * 读取配置信息
+ * 把每次分析的值放到cf->args这个数组里面	碰到{} ; 返回
+ * 例如配置文件如下：
+ * user  nfsnobody nfsnobody;
+ * worker_processes 8;
+ * error_log  /usr/local/nginx-1.4.7/nginx_error.log  crit;
+ * pid        /usr/local/nginx-1.4.7/nginx.pid;
+ * #Specifies the value for maximum file descriptors that can be opened by this process.
+ * worker_rlimit_nofile 65535;
+ * events
+ * {
+ * use epoll;
+ * worker_connections 65535;}
+ *
+ * 分解成逐个单词：
+ * user
+ * nfsnobody
+ * nfsnobody
+ * worker_processes
+ * 8
+ * error_log
+ * /usr/local/nginx-1.4.7/nginx_error.log
+ * crit
+ * pid
+ * /usr/local/nginx-1.4.7/nginx.pid
+ * worker_rlimit_nofile
+ * 65535
+ * events
+ *
+ */
+//文件token解析
 static ngx_int_t
 ngx_conf_read_token(ngx_conf_t *cf)
 {

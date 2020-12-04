@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "algorithm": "cpp",
+        "optional": "cpp",
+        "tuple": "cpp",
+        "__config": "cpp",
+        "__cxx_version": "cpp",
+        "__locale": "cpp",
+        "cstdlib": "cpp",
+        "memory_resource": "cpp",
+        "locale": "cpp",
+        "ostream": "cpp",
+        "system_error": "cpp",
+        "typeinfo": "cpp"
+    }
+}

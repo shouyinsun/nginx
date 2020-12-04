@@ -156,6 +156,11 @@ ngx_uint_t                  ngx_use_epoll_rdhup;
 
 static ngx_str_t      epoll_name = ngx_string("epoll");
 
+/**
+ * epoll模块命令集
+ * epoll_events：这个配置项表示调用一次epoll_wait最多可以返回的事件数
+ * worker_aio_requests：指明在开启异步I/O且使用io_setup系统调用初始化异步I/O上下文环境时,初始分配的异步I/O事件个数
+ */
 static ngx_command_t  ngx_epoll_commands[] = {
 
     { ngx_string("epoll_events"),
@@ -175,7 +180,7 @@ static ngx_command_t  ngx_epoll_commands[] = {
       ngx_null_command
 };
 
-
+//epoll模块上下文
 static ngx_event_module_t  ngx_epoll_module_ctx = {
     &epoll_name,
     ngx_epoll_create_conf,               /* create configuration */
@@ -199,6 +204,12 @@ static ngx_event_module_t  ngx_epoll_module_ctx = {
     }
 };
 
+/**
+ * epoll模块配置
+ * ngx_epoll_module_ctx：epoll模块上下文
+ * ngx_epoll_commands：epoll模块上下文
+ * epoll/kqueue事件模块等没有初始化的方法
+ */
 ngx_module_t  ngx_epoll_module = {
     NGX_MODULE_V1,
     &ngx_epoll_module_ctx,               /* module context */
@@ -780,6 +791,7 @@ ngx_epoll_notify(ngx_event_handler_pt handler)
 #endif
 
 
+//epoll 事件处理
 static ngx_int_t
 ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 {
@@ -796,7 +808,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "epoll timer: %M", timer);
-
+    //调用epoll_wait获取事件
     events = epoll_wait(ep, event_list, (int) nevents, timer);
 
     err = (events == -1) ? ngx_errno : 0;
@@ -832,7 +844,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
                       "epoll_wait() returned no events without timeout");
         return NGX_ERROR;
     }
-
+    //遍历本次epoll_wait返回的所有事件
     for (i = 0; i < events; i++) {
         c = event_list[i].data.ptr;
 
@@ -879,7 +891,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
                           c->fd, revents);
         }
 #endif
-
+        //读取事件 EPOLLIN
         if ((revents & EPOLLIN) && rev->active) {
 
 #if (NGX_HAVE_EPOLLRDHUP)
@@ -890,7 +902,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 
             rev->ready = 1;
             rev->available = -1;
-
+            /* 如果事件抢到锁，则放入事件队列 */
             if (flags & NGX_POST_EVENTS) {
                 queue = rev->accept ? &ngx_posted_accept_events
                                     : &ngx_posted_events;
@@ -898,12 +910,13 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
                 ngx_post_event(rev, queue);
 
             } else {
+                /* 没有抢到锁,立即调用事件回调方法来处理这个事件 */
                 rev->handler(rev);
             }
         }
 
         wev = c->write;
-
+        /* 写事件 EPOLLOUT*/
         if ((revents & EPOLLOUT) && wev->active) {
 
             if (c->fd == -1 || wev->instance != instance) {

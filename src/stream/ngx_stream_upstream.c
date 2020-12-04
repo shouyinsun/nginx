@@ -704,6 +704,7 @@ ngx_stream_upstream_init_main_conf(ngx_conf_t *cf, void *conf)
 
         init = uscfp[i]->peer.init_upstream
                                          ? uscfp[i]->peer.init_upstream
+                                         //默认round_robin,轮询
                                          : ngx_stream_upstream_init_round_robin;
 
         if (init(cf, uscfp[i]) != NGX_OK) {

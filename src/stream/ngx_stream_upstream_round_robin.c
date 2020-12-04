@@ -9,7 +9,8 @@
 #include <ngx_core.h>
 #include <ngx_stream.h>
 
-
+//RR（round-robin）轮询
+//每个请求按时间顺序逐一分配到不同的后端服务器,如果后端服务器down掉能,自动剔除
 #define ngx_stream_upstream_tries(p) ((p)->number                             \
                                       + ((p)->next ? (p)->next->number : 0))
 

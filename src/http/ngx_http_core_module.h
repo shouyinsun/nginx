@@ -103,27 +103,34 @@ typedef struct {
 #endif
 } ngx_http_listen_opt_t;
 
-
+//HTTP 阶段
 typedef enum {
-    NGX_HTTP_POST_READ_PHASE = 0,
+    NGX_HTTP_POST_READ_PHASE = 0,/* 读取请求内容阶段 */
 
-    NGX_HTTP_SERVER_REWRITE_PHASE,
+    NGX_HTTP_SERVER_REWRITE_PHASE,/* Server请求地址重写阶段 */
 
-    NGX_HTTP_FIND_CONFIG_PHASE,
-    NGX_HTTP_REWRITE_PHASE,
-    NGX_HTTP_POST_REWRITE_PHASE,
+    NGX_HTTP_FIND_CONFIG_PHASE,/* 配置查找阶段 */
+    NGX_HTTP_REWRITE_PHASE,/* Location请求地址重写阶段 */
+    NGX_HTTP_POST_REWRITE_PHASE,/* 请求地址重写提交阶段 */
 
-    NGX_HTTP_PREACCESS_PHASE,
+    NGX_HTTP_PREACCESS_PHASE,/* 访问权限检查准备阶段 */
 
-    NGX_HTTP_ACCESS_PHASE,
-    NGX_HTTP_POST_ACCESS_PHASE,
+    NGX_HTTP_ACCESS_PHASE,/* 访问权限检查阶段 */
+    NGX_HTTP_POST_ACCESS_PHASE,/* 访问权限检查提交阶段 */
 
-    NGX_HTTP_PRECONTENT_PHASE,
+    NGX_HTTP_PRECONTENT_PHASE,/* 配置项try_files处理阶段 */
 
-    NGX_HTTP_CONTENT_PHASE,
+    NGX_HTTP_CONTENT_PHASE,/* 内容产生阶段 */
 
-    NGX_HTTP_LOG_PHASE
+    NGX_HTTP_LOG_PHASE/* 日志模块处理阶段 */
 } ngx_http_phases;
+
+// 四个phase是不支持添加http功能的handler的
+//这四个阶段分别是NGX_FIND_CONFIG_PHASE、NGX_POST_REWRITE_PHASE、NGX_POST_ACCESS_PHASE、NGX_TRY_FILES_PHASE
+
+// 如果需要自定义添加模块挂载的Nginx的阶段处理上
+//推荐挂载到这三个阶段：NGX_HTTP_PREACCESS_PHASE、NGX_HTTP_ACCESS_PHASE、NGX_HTTP_CONTENT_PHASE
+
 
 typedef struct ngx_http_phase_handler_s  ngx_http_phase_handler_t;
 
@@ -172,7 +179,7 @@ typedef struct {
 
     ngx_array_t               *ports;
 
-    ngx_http_phase_t           phases[NGX_HTTP_LOG_PHASE + 1];
+    ngx_http_phase_t           phases[NGX_HTTP_LOG_PHASE + 1];//阶段
 } ngx_http_core_main_conf_t;
 
 

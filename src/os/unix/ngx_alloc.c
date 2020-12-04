@@ -31,6 +31,7 @@ ngx_alloc(size_t size, ngx_log_t *log)
 }
 
 
+//calloc会初始化
 void *
 ngx_calloc(size_t size, ngx_log_t *log)
 {
@@ -39,6 +40,7 @@ ngx_calloc(size_t size, ngx_log_t *log)
     p = ngx_alloc(size, log);
 
     if (p) {
+        //将内存块全部设置为0
         ngx_memzero(p, size);
     }
 

@@ -13,12 +13,13 @@
 #include <ngx_core.h>
 
 
+//数组
 typedef struct {
-    void        *elts;
-    ngx_uint_t   nelts;
-    size_t       size;
-    ngx_uint_t   nalloc;
-    ngx_pool_t  *pool;
+    void        *elts;//指向数组第一个元素指针
+    ngx_uint_t   nelts;//使用元素的索引
+    size_t       size;//每个元素的大小,元素大小固定
+    ngx_uint_t   nalloc;//能分配多少元素
+    ngx_pool_t  *pool;//内存池
 } ngx_array_t;
 
 
@@ -29,6 +30,7 @@ void *ngx_array_push_n(ngx_array_t *a, ngx_uint_t n);
 
 
 static ngx_inline ngx_int_t
+//数组初始化
 ngx_array_init(ngx_array_t *array, ngx_pool_t *pool, ngx_uint_t n, size_t size)
 {
     /*

@@ -9,6 +9,7 @@
 #include <ngx_core.h>
 #include <ngx_stream.h>
 
+//最少连接
 
 static ngx_int_t ngx_stream_upstream_init_least_conn_peer(
     ngx_stream_session_t *s, ngx_stream_upstream_srv_conf_t *us);

@@ -9,11 +9,13 @@
 #include <ngx_core.h>
 
 
+//创建数组
 ngx_array_t *
 ngx_array_create(ngx_pool_t *p, ngx_uint_t n, size_t size)
 {
     ngx_array_t *a;
 
+    //在内存池pool上面分配一段内存给ngx_array数据结构
     a = ngx_palloc(p, sizeof(ngx_array_t));
     if (a == NULL) {
         return NULL;
@@ -27,6 +29,7 @@ ngx_array_create(ngx_pool_t *p, ngx_uint_t n, size_t size)
 }
 
 
+//销毁数组
 void
 ngx_array_destroy(ngx_array_t *a)
 {
@@ -34,16 +37,28 @@ ngx_array_destroy(ngx_array_t *a)
 
     p = a->pool;
 
+    /**
+     * 如果数组元素的末尾地址和内存池pool的可用开始的地址相同
+     * 则将内存池pool->d.last移动到数组元素的开始地址
+     * 相当于清除当前数组的内容
+     */
+
     if ((u_char *) a->elts + a->size * a->nalloc == p->d.last) {
         p->d.last -= a->size * a->nalloc;
     }
-
+    /**
+     * 如果数组的数据结构ngx_array_t的末尾地址和内存池pool的可用开始地址相同
+     * 则将内存池pool->d.last移动到数组元素的开始地址
+     * 相当于清除当前数组的内容
+     */
     if ((u_char *) a + sizeof(ngx_array_t) == p->d.last) {
         p->d.last = (u_char *) a;
     }
 }
 
 
+
+//添加一个数组元素
 void *
 ngx_array_push(ngx_array_t *a)
 {
@@ -51,6 +66,7 @@ ngx_array_push(ngx_array_t *a)
     size_t       size;
     ngx_pool_t  *p;
 
+    //用完了,需要扩容
     if (a->nelts == a->nalloc) {
 
         /* the array is full */
@@ -61,7 +77,7 @@ ngx_array_push(ngx_array_t *a)
 
         if ((u_char *) a->elts + size == p->d.last
             && p->d.last + a->size <= p->d.end)
-        {
+        {//pool还有剩余空间支持扩容
             /*
              * the array allocation is the last in the pool
              * and there is space for new allocation
@@ -70,14 +86,14 @@ ngx_array_push(ngx_array_t *a)
             p->d.last += a->size;
             a->nalloc++;
 
-        } else {
+        } else {//分配一个新的数组,size*2
             /* allocate a new array */
 
             new = ngx_palloc(p, 2 * size);
             if (new == NULL) {
                 return NULL;
             }
-
+            //内存拷贝
             ngx_memcpy(new, a->elts, size);
             a->elts = new;
             a->nalloc *= 2;
@@ -91,6 +107,7 @@ ngx_array_push(ngx_array_t *a)
 }
 
 
+//添加n个数组元素
 void *
 ngx_array_push_n(ngx_array_t *a, ngx_uint_t n)
 {

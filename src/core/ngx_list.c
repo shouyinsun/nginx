@@ -9,6 +9,7 @@
 #include <ngx_core.h>
 
 
+//创建链表
 ngx_list_t *
 ngx_list_create(ngx_pool_t *pool, ngx_uint_t n, size_t size)
 {
@@ -18,7 +19,7 @@ ngx_list_create(ngx_pool_t *pool, ngx_uint_t n, size_t size)
     if (list == NULL) {
         return NULL;
     }
-
+    // n*size
     if (ngx_list_init(list, pool, n, size) != NGX_OK) {
         return NULL;
     }

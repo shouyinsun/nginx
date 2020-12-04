@@ -430,6 +430,7 @@ extern ngx_os_io_t  ngx_io;
 #define NGX_EVENT_CONF        0x02000000
 
 
+//nginx事件配置
 typedef struct {
     ngx_uint_t    connections;
     ngx_uint_t    use;

@@ -15,16 +15,24 @@
 
 typedef struct ngx_list_part_s  ngx_list_part_t;
 
+//链表part
 struct ngx_list_part_s {
+    //节点的内存起始位置
     void             *elts;
+    //已经使用的元素
     ngx_uint_t        nelts;
+    //一个链表节点
     ngx_list_part_t  *next;
 };
 
 
+//链表
 typedef struct {
+    //最新的链表节点
     ngx_list_part_t  *last;
+    //第一个链表节点
     ngx_list_part_t   part;
+    //默认的每个元素大小
     size_t            size;
     ngx_uint_t        nalloc;
     ngx_pool_t       *pool;

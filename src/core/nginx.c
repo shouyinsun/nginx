@@ -38,6 +38,7 @@ static ngx_conf_enum_t  ngx_debug_points[] = {
 };
 
 
+//核心模块的命令
 static ngx_command_t  ngx_core_commands[] = {
 
     { ngx_string("daemon"),
@@ -207,6 +208,7 @@ main(int argc, char *const *argv)
         return 1;
     }
 
+    //解析命令行中的参数
     if (ngx_get_options(argc, argv) != NGX_OK) {
         return 1;
     }
@@ -221,15 +223,17 @@ main(int argc, char *const *argv)
 
     /* TODO */ ngx_max_sockets = -1;
 
+    //初始化并更新时间
     ngx_time_init();
 
 #if (NGX_PCRE)
     ngx_regex_init();
 #endif
-
+    //获取pid
     ngx_pid = ngx_getpid();
     ngx_parent = ngx_getppid();
 
+    //初始化日志
     log = ngx_log_init(ngx_prefix);
     if (log == NULL) {
         return 1;
@@ -245,23 +249,26 @@ main(int argc, char *const *argv)
      * ngx_process_options()
      */
 
+    //初始化init_cycle 
+    //Nginx的全局变量
     ngx_memzero(&init_cycle, sizeof(ngx_cycle_t));
     init_cycle.log = log;
     ngx_cycle = &init_cycle;
 
+    //1024 byte
     init_cycle.pool = ngx_create_pool(1024, log);
     if (init_cycle.pool == NULL) {
         return 1;
     }
-
+    //保存Nginx命令行中的参数和变量,放到全局变量ngx_argv
     if (ngx_save_argv(&init_cycle, argc, argv) != NGX_OK) {
         return 1;
     }
-
+    //ngx_get_options中获得这些参数取值赋值到ngx_cycle中
     if (ngx_process_options(&init_cycle) != NGX_OK) {
         return 1;
     }
-
+    //初始化系统相关变量
     if (ngx_os_init(log) != NGX_OK) {
         return 1;
     }
@@ -269,7 +276,7 @@ main(int argc, char *const *argv)
     /*
      * ngx_crc32_table_init() requires ngx_cacheline_size set in ngx_os_init()
      */
-
+    //初始化一致性hash表
     if (ngx_crc32_table_init() != NGX_OK) {
         return 1;
     }
@@ -280,14 +287,18 @@ main(int argc, char *const *argv)
 
     ngx_slab_sizes_init();
 
+    //继承了socket
+    //主要作用是热启动的时候需要平滑过渡
     if (ngx_add_inherited_sockets(&init_cycle) != NGX_OK) {
         return 1;
     }
 
+    //前置的初始化模块,对模块进行编号处理
     if (ngx_preinit_modules() != NGX_OK) {
         return 1;
     }
 
+    //完成全局变量cycle的初始化
     cycle = ngx_init_cycle(&init_cycle);
     if (cycle == NULL) {
         if (ngx_test_config) {
@@ -323,7 +334,7 @@ main(int argc, char *const *argv)
 
         return 0;
     }
-
+    //信号处理
     if (ngx_signal) {
         return ngx_signal_process(cycle, ngx_signal);
     }
@@ -332,6 +343,7 @@ main(int argc, char *const *argv)
 
     ngx_cycle = cycle;
 
+    //得到核心模块ngx_core_conf_t的配置文件指针
     ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_core_module);
 
     if (ccf->master && ngx_process == NGX_PROCESS_SINGLE) {
@@ -357,7 +369,7 @@ main(int argc, char *const *argv)
     }
 
 #endif
-
+    //创建pid文件
     if (ngx_create_pidfile(&ccf->pid, cycle->log) != NGX_OK) {
         return 1;
     }
@@ -379,6 +391,8 @@ main(int argc, char *const *argv)
         ngx_single_process_cycle(cycle);
 
     } else {
+        //创建多个Nginx的子进程
+        //包括子进程创建、事件监听、各种模块运行
         ngx_master_process_cycle(cycle);
     }
 
@@ -447,7 +461,8 @@ ngx_show_version_info(void)
     }
 }
 
-
+//继承了socket
+//主要作用是热启动的时候需要平滑过渡
 static ngx_int_t
 ngx_add_inherited_sockets(ngx_cycle_t *cycle)
 {
@@ -455,6 +470,8 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
     ngx_int_t         s;
     ngx_listening_t  *ls;
 
+    //获取宏环境变量NGINX的值,值是客户端socket的句柄
+    //如：NGINX="16000:16500:16600;"
     inherited = (u_char *) getenv(NGINX_VAR);
 
     if (inherited == NULL) {
@@ -483,7 +500,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
             }
 
             v = p + 1;
-
+            //将fd保存到ngx_listening_t结构数组上
             ls = ngx_array_push(&cycle->listening);
             if (ls == NULL) {
                 return NGX_ERROR;
@@ -502,6 +519,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
                       " environment variable, ignoring", v);
     }
 
+    //已经处理过继承socket
     ngx_inherited = 1;
 
     return ngx_set_inherited_sockets(cycle);
@@ -739,6 +757,7 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
 }
 
 
+//解析命令行中的参数
 static ngx_int_t
 ngx_get_options(int argc, char *const *argv)
 {
@@ -800,6 +819,7 @@ ngx_get_options(int argc, char *const *argv)
                 ngx_log_stderr(0, "option \"-p\" requires directory name");
                 return NGX_ERROR;
 
+            //conf file conf文件
             case 'c':
                 if (*p) {
                     ngx_conf_file = p;
@@ -828,6 +848,7 @@ ngx_get_options(int argc, char *const *argv)
                 ngx_log_stderr(0, "option \"-g\" requires parameter");
                 return NGX_ERROR;
 
+            // -s 表示信号处理
             case 's':
                 if (*p) {
                     ngx_signal = (char *) p;
@@ -840,6 +861,7 @@ ngx_get_options(int argc, char *const *argv)
                     return NGX_ERROR;
                 }
 
+                //stop、quit、reopen、relaod 命令
                 if (ngx_strcmp(ngx_signal, "stop") == 0
                     || ngx_strcmp(ngx_signal, "quit") == 0
                     || ngx_strcmp(ngx_signal, "reopen") == 0
@@ -915,6 +937,7 @@ ngx_process_options(ngx_cycle_t *cycle)
     u_char  *p;
     size_t   len;
 
+    //Nginx工作目录
     if (ngx_prefix) {
         len = ngx_strlen(ngx_prefix);
         p = ngx_prefix;
@@ -968,7 +991,7 @@ ngx_process_options(ngx_cycle_t *cycle)
 
 #endif
     }
-
+    //配置文件目录
     if (ngx_conf_file) {
         cycle->conf_file.len = ngx_strlen(ngx_conf_file);
         cycle->conf_file.data = ngx_conf_file;
@@ -991,7 +1014,7 @@ ngx_process_options(ngx_cycle_t *cycle)
             break;
         }
     }
-
+    //配置参数
     if (ngx_conf_params) {
         cycle->conf_param.len = ngx_strlen(ngx_conf_params);
         cycle->conf_param.data = ngx_conf_params;

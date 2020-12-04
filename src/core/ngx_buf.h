@@ -17,11 +17,12 @@ typedef void *            ngx_buf_tag_t;
 
 typedef struct ngx_buf_s  ngx_buf_t;
 
+//缓冲区 即可以处理内存,也可以处理文件
 struct ngx_buf_s {
-    u_char          *pos;
-    u_char          *last;
-    off_t            file_pos;
-    off_t            file_last;
+    u_char          *pos;//待处理数据的开始标记
+    u_char          *last;//待处理数据的结尾标记
+    off_t            file_pos;//文件开始标记
+    off_t            file_last;//文件结束标记
 
     u_char          *start;         /* start of buffer */
     u_char          *end;           /* end of buffer */
@@ -31,16 +32,16 @@ struct ngx_buf_s {
 
 
     /* the buf's content could be changed */
-    unsigned         temporary:1;
+    unsigned         temporary:1;/* 标志位,为1时,内存可修改 */
 
     /*
      * the buf's content is in a memory cache or in a read only memory
      * and must not be changed
      */
-    unsigned         memory:1;
+    unsigned         memory:1;/* 标志位,为1时,内存只读 */
 
     /* the buf's content is mmap()ed and must not be changed */
-    unsigned         mmap:1;
+    unsigned         mmap:1;/* 标志位,为1时,mmap映射过来的内存,不可修改 */
 
     unsigned         recycled:1;
     unsigned         in_file:1;
@@ -55,7 +56,7 @@ struct ngx_buf_s {
     /* STUB */ int   num;
 };
 
-
+//缓冲区链表结构
 struct ngx_chain_s {
     ngx_buf_t    *buf;
     ngx_chain_t  *next;

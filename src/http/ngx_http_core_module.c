@@ -808,7 +808,7 @@ ngx_module_t  ngx_http_core_module = {
 
 ngx_str_t  ngx_http_core_get_method = { 3, (u_char *) "GET" };
 
-
+/* http处理分发核心函数 */
 void
 ngx_http_handler(ngx_http_request_t *r)
 {
@@ -846,7 +846,7 @@ ngx_http_handler(ngx_http_request_t *r)
     r->gzip_ok = 0;
     r->gzip_vary = 0;
 #endif
-
+    /* 设置write事件回调函数,并且执行ngx_http_core_run_phases回调函数 */
     r->write_event_handler = ngx_http_core_run_phases;
     ngx_http_core_run_phases(r);
 }

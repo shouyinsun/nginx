@@ -35,56 +35,56 @@ struct ngx_shm_zone_s {
     ngx_uint_t                noreuse;  /* unsigned  noreuse:1; */
 };
 
-
+//Nginx的全局变量
 struct ngx_cycle_s {
-    void                  ****conf_ctx;
-    ngx_pool_t               *pool;
+    void                  ****conf_ctx;//配置文件上下文的数组,每个模块的配置信息
+    ngx_pool_t               *pool;//内存池地址
 
-    ngx_log_t                *log;
+    ngx_log_t                *log;//日志
     ngx_log_t                 new_log;
 
     ngx_uint_t                log_use_stderr;  /* unsigned  log_use_stderr:1; */
 
-    ngx_connection_t        **files;
-    ngx_connection_t         *free_connections;
-    ngx_uint_t                free_connection_n;
+    ngx_connection_t        **files;//连接文件句柄
+    ngx_connection_t         *free_connections;//空闲连接 
+    ngx_uint_t                free_connection_n;//空闲连接个数
 
-    ngx_module_t            **modules;
-    ngx_uint_t                modules_n;
+    ngx_module_t            **modules;//模块数组
+    ngx_uint_t                modules_n;//模块个数
     ngx_uint_t                modules_used;    /* unsigned  modules_used:1; */
 
     ngx_queue_t               reusable_connections_queue;
     ngx_uint_t                reusable_connections_n;
     time_t                    connections_reuse_time;
 
-    ngx_array_t               listening;
-    ngx_array_t               paths;
+    ngx_array_t               listening;//监听数组
+    ngx_array_t               paths;//路径数组
 
     ngx_array_t               config_dump;
     ngx_rbtree_t              config_dump_rbtree;
     ngx_rbtree_node_t         config_dump_sentinel;
 
-    ngx_list_t                open_files;
-    ngx_list_t                shared_memory;
+    ngx_list_t                open_files;//打开的文件
+    ngx_list_t                shared_memory;//共享内存
 
-    ngx_uint_t                connection_n;
-    ngx_uint_t                files_n;
+    ngx_uint_t                connection_n;//连接个数
+    ngx_uint_t                files_n;//打开文件个数
 
-    ngx_connection_t         *connections;
-    ngx_event_t              *read_events;
-    ngx_event_t              *write_events;
+    ngx_connection_t         *connections;//连接事件
+    ngx_event_t              *read_events;//读事件
+    ngx_event_t              *write_events;//写事件
 
     ngx_cycle_t              *old_cycle;
 
-    ngx_str_t                 conf_file;
-    ngx_str_t                 conf_param;
-    ngx_str_t                 conf_prefix;
-    ngx_str_t                 prefix;
-    ngx_str_t                 lock_file;
-    ngx_str_t                 hostname;
+    ngx_str_t                 conf_file;//配置文件
+    ngx_str_t                 conf_param;//配置参数
+    ngx_str_t                 conf_prefix;//配置文件前缀
+    ngx_str_t                 prefix;//前缀
+    ngx_str_t                 lock_file;//锁文件
+    ngx_str_t                 hostname;//主机名
 };
 
-
+//nginx 核心配置
 typedef struct {
     ngx_flag_t                daemon;
     ngx_flag_t                master;
@@ -92,7 +92,7 @@ typedef struct {
     ngx_msec_t                timer_resolution;
     ngx_msec_t                shutdown_timeout;
 
-    ngx_int_t                 worker_processes;
+    ngx_int_t                 worker_processes;//worker
     ngx_int_t                 debug_points;
 
     ngx_int_t                 rlimit_nofile;
