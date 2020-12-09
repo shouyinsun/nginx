@@ -792,7 +792,7 @@ ngx_get_options(int argc, char *const *argv)
                 ngx_show_configure = 1;
                 break;
 
-            case 't':
+            case 't':// -t 验证配置文件正确性
                 ngx_test_config = 1;
                 break;
 
@@ -848,7 +848,7 @@ ngx_get_options(int argc, char *const *argv)
                 ngx_log_stderr(0, "option \"-g\" requires parameter");
                 return NGX_ERROR;
 
-            // -s 表示信号处理
+            // -s 表示信号处理  如:nginx -s reload
             case 's':
                 if (*p) {
                     ngx_signal = (char *) p;
